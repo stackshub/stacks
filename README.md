@@ -2,7 +2,7 @@
 
 Stacks is a simple puzzle game using LIFO stacks.
 
-[Play it now!](https://stackshub.github.io/stacks/index.html)
+[Play it now!](https://stackshub.github.io/stacks/)
 
 ## How to play
 

@@ -229,9 +229,7 @@ window.onload = function() {
       'https://twitter.com/share?text=' +
       encodeURIComponent(document.title) +
       '&url=' +
-      encodeURIComponent(
-        'https://stackshub.github.io/stacks/index.html#' + boardCode
-      ) +
+      encodeURIComponent('https://stackshub.github.io/stacks/#' + boardCode) +
       '&hashtags=' +
       encodeURIComponent(appName);
   }
