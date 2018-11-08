@@ -27,7 +27,8 @@ window.onload = function() {
   var boardCode;
   var routeLimit;
   var board;
-  var selectedIndex;
+  var popIndex;
+  var pushIndex;
   var moves;
 
   (function() {
@@ -101,6 +102,8 @@ window.onload = function() {
     context.lineJoin = 'bevel';
     context.strokeStyle = 'black';
     addTouchStartListener(canvas, onTouchStart);
+    addTouchMoveListener(canvas, onTouchMove);
+    addTouchEndListener(canvas, onTouchEnd);
     (window.onhashchange = onHashChange)();
   })();
 
@@ -114,7 +117,8 @@ window.onload = function() {
       return;
     }
     updateStackCount(board.length);
-    selectedIndex = -1;
+    popIndex = -1;
+    pushIndex = -1;
     moves = [];
     var normalBoardCode = normalizeBoardCode(boardCode);
     routeLimit = problemTable[board.length][normalBoardCode];
@@ -142,24 +146,59 @@ window.onload = function() {
       }
       return;
     }
-    if (boardRect.contains(x, y)) {
-      var stackIndex = Math.floor((x - boardRect.left) / stackWidth);
-      if (selectedIndex < 0) {
-        commandPop(stackIndex);
-      } else {
-        commandPush(stackIndex);
+    var touchIndex = getTouchIndexAt(x, y);
+    if (touchIndex < 0) {
+      if (homeButtonRect.contains(x, y)) {
+        commandHome();
+      } else if (shareButtonRect.contains(x, y)) {
+        commandShare();
+      } else if (retryButtonRect.contains(x, y)) {
+        commandRetry();
+      } else if (undoButtonRect.contains(x, y)) {
+        commandUndo();
+      } else if (scene === sceneResult && okButtonRect.contains(x, y)) {
+        commandNew();
       }
-    } else if (homeButtonRect.contains(x, y)) {
-      commandHome();
-    } else if (shareButtonRect.contains(x, y)) {
-      commandShare();
-    } else if (retryButtonRect.contains(x, y)) {
-      commandRetry();
-    } else if (undoButtonRect.contains(x, y)) {
-      commandUndo();
-    } else if (scene === sceneResult && okButtonRect.contains(x, y)) {
-      commandNew();
+      return;
     }
+    if (popIndex < 0) {
+      commandPop(touchIndex);
+    } else {
+      commandPush(touchIndex);
+    }
+  }
+
+  function onTouchMove(x, y) {
+    if (popIndex < 0) {
+      return;
+    }
+    var touchIndex = getTouchIndexAt(x, y);
+    if (
+      touchIndex < 0 ||
+      touchIndex === pushIndex ||
+      (touchIndex === popIndex && pushIndex < 0)
+    ) {
+      return;
+    }
+    pushIndex = touchIndex;
+    paint();
+  }
+
+  function onTouchEnd() {
+    if (popIndex < 0 || pushIndex < 0) {
+      return;
+    }
+    commandPush(pushIndex);
+  }
+
+  function getTouchIndexAt(x, y) {
+    if (y >= boardRect.top && y < boardRect.bottom()) {
+      var stackIndex = Math.floor((x - boardRect.left) / stackWidth);
+      if (stackIndex >= 0 && stackIndex < stackCount) {
+        return stackIndex;
+      }
+    }
+    return -1;
   }
 
   function commandHome() {
@@ -180,27 +219,28 @@ window.onload = function() {
     if (srcStack.length === 0) {
       return;
     }
-    selectedIndex = stackIndex;
+    popIndex = stackIndex;
+    pushIndex = -1;
     paint();
   }
 
   function commandPush(stackIndex) {
-    if (stackIndex !== selectedIndex) {
+    if (stackIndex !== popIndex) {
       var dstStack = board[stackIndex];
-      if (dstStack.length >= stackCount) {
-        return;
-      }
-      dstStack.push(board[selectedIndex].pop());
-      moves.push([selectedIndex, stackIndex]);
-      if (
-        scene !== sceneResult &&
-        moves.length <= routeLimit &&
-        isBoardArranged(board)
-      ) {
-        scene = sceneResult;
+      if (dstStack.length < stackCount) {
+        dstStack.push(board[popIndex].pop());
+        moves.push([popIndex, stackIndex]);
+        if (
+          scene !== sceneResult &&
+          moves.length <= routeLimit &&
+          isBoardArranged(board)
+        ) {
+          scene = sceneResult;
+        }
       }
     }
-    selectedIndex = -1;
+    popIndex = -1;
+    pushIndex = -1;
     paint();
   }
 
@@ -210,7 +250,8 @@ window.onload = function() {
       board[move[0]].push(board[move[1]].pop());
     }
     moves = [];
-    selectedIndex = -1;
+    popIndex = -1;
+    pushIndex = -1;
     paint();
   }
 
@@ -220,7 +261,8 @@ window.onload = function() {
       board[move[0]].push(board[move[1]].pop());
       moves.splice(moves.length - 1, 1);
     }
-    selectedIndex = -1;
+    popIndex = -1;
+    pushIndex = -1;
     paint();
   }
 
@@ -282,13 +324,22 @@ window.onload = function() {
         boardRect.bottom() - pieceHeight / 2
       );
       var stack = board[i];
-      for (var j = 0; j < stack.length; j++) {
-        var pieceTop = boardRect.top;
-        if (i !== selectedIndex || j !== stack.length - 1) {
-          pieceTop += pieceHeight * (stackCount - j);
-        }
-        paintPiece(stack[j], stackLeft, pieceTop);
+      var n = i === popIndex ? stack.length - 1 : stack.length;
+      for (var j = 0; j < n; j++) {
+        paintPiece(
+          stack[j],
+          stackLeft,
+          boardRect.top + pieceHeight * (stackCount - j)
+        );
       }
+    }
+    if (popIndex >= 0) {
+      var popStack = board[popIndex];
+      paintPiece(
+        popStack[popStack.length - 1],
+        boardRect.left + stackWidth * (pushIndex >= 0 ? pushIndex : popIndex),
+        boardRect.top
+      );
     }
 
     context.fillStyle = 'white';
@@ -487,6 +538,58 @@ function addTouchStartListener(target, listener) {
     function(event) {
       preventEvent(event);
       target.touchFirst = true;
+      var rect = event.target.getBoundingClientRect();
+      for (var i = 0; i < event.changedTouches.length; i++) {
+        var touch = event.changedTouches[i];
+        listener(touch.clientX - rect.left, touch.clientY - rect.top);
+      }
+    },
+    false
+  );
+}
+
+function addTouchMoveListener(target, listener) {
+  target.addEventListener(
+    'mousemove',
+    function(event) {
+      preventEvent(event);
+      if (!target.touchFirst) {
+        var rect = event.target.getBoundingClientRect();
+        listener(event.clientX - rect.left, event.clientY - rect.top);
+      }
+    },
+    false
+  );
+  target.addEventListener(
+    'touchmove',
+    function(event) {
+      preventEvent(event);
+      var rect = event.target.getBoundingClientRect();
+      for (var i = 0; i < event.changedTouches.length; i++) {
+        var touch = event.changedTouches[i];
+        listener(touch.clientX - rect.left, touch.clientY - rect.top);
+      }
+    },
+    false
+  );
+}
+
+function addTouchEndListener(target, listener) {
+  target.addEventListener(
+    'mouseup',
+    function(event) {
+      preventEvent(event);
+      if (!target.touchFirst) {
+        var rect = event.target.getBoundingClientRect();
+        listener(event.clientX - rect.left, event.clientY - rect.top);
+      }
+    },
+    false
+  );
+  target.addEventListener(
+    'touchend',
+    function(event) {
+      preventEvent(event);
       var rect = event.target.getBoundingClientRect();
       for (var i = 0; i < event.changedTouches.length; i++) {
         var touch = event.changedTouches[i];
