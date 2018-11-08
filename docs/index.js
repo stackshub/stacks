@@ -32,42 +32,42 @@ window.onload = function() {
   var moves;
 
   (function() {
-    var boardWidth = canvas.width - margin * 2;
-    boardRect = new Rect(
-      margin,
-      (canvas.height - boardWidth) / 2,
-      boardWidth,
-      boardWidth
-    );
-    var buttonWidth = boardWidth / 3;
-    var buttonHeight = canvas.height - boardRect.height - margin * 4;
-    var buttonTop = (canvas.height - buttonHeight) / 2;
+    var buttonWidth = (canvas.width - margin * 2) / 3;
+    var buttonTop = (canvas.height - buttonWidth) / 2;
     titleLabelRect = new Rect(
       margin + buttonWidth,
-      buttonTop - buttonHeight - margin,
+      buttonTop - buttonWidth - margin,
       buttonWidth,
-      buttonHeight
+      buttonWidth
     );
-    easyButtonRect = new Rect(margin, buttonTop, buttonWidth, buttonHeight);
+    easyButtonRect = new Rect(margin, buttonTop, buttonWidth, buttonWidth);
     normalButtonRect = new Rect(
       margin + buttonWidth,
       buttonTop,
       buttonWidth,
-      buttonHeight
+      buttonWidth
     );
     hardButtonRect = new Rect(
       margin + buttonWidth * 2,
       buttonTop,
       buttonWidth,
-      buttonHeight
+      buttonWidth
     );
     helpButtonRect = new Rect(
       margin + buttonWidth,
-      buttonTop + buttonHeight + margin,
+      buttonTop + buttonWidth + margin,
       buttonWidth,
-      buttonHeight
+      buttonWidth
     );
-    buttonHeight /= 2;
+
+    var boardWidth = canvas.width - margin * 4;
+    boardRect = new Rect(
+      (canvas.width - boardWidth) / 2,
+      (canvas.height - boardWidth) / 2,
+      boardWidth,
+      boardWidth
+    );
+    var buttonHeight = (canvas.height - boardRect.height - margin * 4) / 2;
     homeButtonRect = new Rect(margin, margin, buttonWidth, buttonHeight);
     countLabelRect = new Rect(
       margin + buttonWidth,
@@ -95,6 +95,7 @@ window.onload = function() {
       buttonWidth,
       buttonHeight
     );
+
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     context.font = '20px sans-serif';
