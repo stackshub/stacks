@@ -268,17 +268,22 @@ window.onload = function() {
   }
 
   function commandShare() {
-    location.href =
+    openUrl(
       'https://twitter.com/share?text=' +
-      encodeURIComponent(document.title) +
-      '&url=' +
-      encodeURIComponent('https://stackshub.github.io/stacks/#' + boardCode) +
-      '&hashtags=' +
-      encodeURIComponent(appName);
+        encodeURIComponent(document.title) +
+        '&url=' +
+        encodeURIComponent('https://stackshub.github.io/stacks/#' + boardCode) +
+        '&hashtags=' +
+        encodeURIComponent(appName)
+    );
   }
 
   function commandHelp() {
-    location.href = 'https://github.com/stackshub/stacks/blob/master/README.md';
+    openUrl('https://github.com/stackshub/stacks/blob/master/README.md');
+  }
+
+  function openUrl(url) {
+    parent.location.href = url;
   }
 
   function paint() {
