@@ -2,6 +2,9 @@ window.onload = function() {
   var appName = document.title;
   var canvas = document.getElementById('mainCanvas');
   var context = canvas.getContext('2d');
+  var stageWidth = 360;
+  var stageHeight = 480;
+  var scale;
   var margin = 10;
   var titleLabelRect;
   var easyButtonRect;
@@ -32,8 +35,8 @@ window.onload = function() {
   var moves;
 
   (function() {
-    var buttonWidth = (canvas.width - margin * 2) / 3;
-    var buttonTop = (canvas.height - buttonWidth) / 2;
+    var buttonWidth = (stageWidth - margin * 2) / 3;
+    var buttonTop = (stageHeight - buttonWidth) / 2;
     titleLabelRect = new Rect(
       margin + buttonWidth,
       buttonTop - buttonWidth - margin,
@@ -60,14 +63,14 @@ window.onload = function() {
       buttonWidth
     );
 
-    var boardWidth = canvas.width - margin * 4;
+    var boardWidth = stageWidth - margin * 4;
     boardRect = new Rect(
-      (canvas.width - boardWidth) / 2,
-      (canvas.height - boardWidth) / 2,
+      (stageWidth - boardWidth) / 2,
+      (stageHeight - boardWidth) / 2,
       boardWidth,
       boardWidth
     );
-    var buttonHeight = (canvas.height - boardRect.height - margin * 4) / 2;
+    var buttonHeight = (stageHeight - boardRect.height - margin * 4) / 2;
     homeButtonRect = new Rect(margin, margin, buttonWidth, buttonHeight);
     countLabelRect = new Rect(
       margin + buttonWidth,
@@ -81,7 +84,7 @@ window.onload = function() {
       buttonWidth,
       buttonHeight
     );
-    buttonTop = canvas.height - buttonHeight - margin;
+    buttonTop = stageHeight - buttonHeight - margin;
     retryButtonRect = new Rect(margin, buttonTop, buttonWidth, buttonHeight);
     okButtonRect = new Rect(
       margin + buttonWidth,
@@ -96,17 +99,45 @@ window.onload = function() {
       buttonHeight
     );
 
+    addTouchStartListener(canvas, function(x, y) {
+      onTouchStart(x / scale, y / scale);
+    });
+    addTouchMoveListener(canvas, function(x, y) {
+      onTouchMove(x / scale, y / scale);
+    });
+    addTouchEndListener(canvas, function(x, y) {
+      onTouchEnd(x / scale, y / scale);
+    });
+    window.onresize = window.onorientationchange = onResize;
+    resize();
+    (window.onhashchange = onHashChange)();
+  })();
+
+  function onResize() {
+    resize();
+    paint();
+  }
+
+  function resize() {
+    var screenWidth =
+      window.innerWidth ||
+      document.documentElement.clientWidth ||
+      document.body.clientWidth;
+    var screenHeight =
+      window.innerHeight ||
+      document.documentElement.clientHeight ||
+      document.body.clientHeight;
+    scale = Math.min(screenWidth / stageWidth, screenHeight / stageHeight);
+    canvas.width = stageWidth * scale;
+    canvas.height = stageHeight * scale;
+    context.scale(scale, scale);
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     context.font = '20px sans-serif';
     context.lineWidth = 2;
     context.lineJoin = 'bevel';
     context.strokeStyle = 'black';
-    addTouchStartListener(canvas, onTouchStart);
-    addTouchMoveListener(canvas, onTouchMove);
-    addTouchEndListener(canvas, onTouchEnd);
-    (window.onhashchange = onHashChange)();
-  })();
+  }
 
   function onHashChange() {
     boardCode = location.hash.slice(1);
@@ -288,7 +319,7 @@ window.onload = function() {
 
   function paint() {
     context.fillStyle = 'black';
-    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillRect(0, 0, stageWidth, stageHeight);
 
     if (scene === sceneHome) {
       context.fillStyle = 'white';
