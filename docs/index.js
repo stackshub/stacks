@@ -119,15 +119,10 @@ window.onload = function() {
   }
 
   function resize() {
-    var screenWidth =
-      window.innerWidth ||
-      document.documentElement.clientWidth ||
-      document.body.clientWidth;
-    var screenHeight =
-      window.innerHeight ||
-      document.documentElement.clientHeight ||
-      document.body.clientHeight;
-    scale = Math.min(screenWidth / stageWidth, screenHeight / stageHeight);
+    scale = Math.min(
+      window.innerWidth / stageWidth,
+      window.innerHeight / stageHeight
+    );
     canvas.width = stageWidth * scale;
     canvas.height = stageHeight * scale;
     context.scale(scale, scale);
