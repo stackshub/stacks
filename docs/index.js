@@ -137,27 +137,11 @@ window.onload = function() {
   function onHashChange() {
     boardCode = location.hash.slice(1);
     board = boardCodeToBoard(boardCode);
-    if (!board) {
-      document.title = appName;
-      scene = sceneHome;
-      paint();
+    if (board) {
+      goPlay();
       return;
     }
-    updateStackCount(board.length);
-    popIndex = -1;
-    pushIndex = -1;
-    moves = [];
-    var normalBoardCode = normalizeBoardCode(boardCode);
-    routeLimit = problemTable[board.length][normalBoardCode];
-    document.title = appName + ' ' + boardCode;
-    scene = scenePlay;
-    paint();
-  }
-
-  function updateStackCount(newStackCount) {
-    stackCount = newStackCount;
-    stackWidth = boardRect.width / stackCount;
-    pieceHeight = boardRect.height / (stackCount + 2);
+    goHome();
   }
 
   function onTouchStart(x, y) {
@@ -229,7 +213,14 @@ window.onload = function() {
   }
 
   function commandHome() {
-    location.hash = '';
+    history.pushState(null, null, '#');
+    goHome();
+  }
+
+  function goHome() {
+    document.title = appName;
+    scene = sceneHome;
+    paint();
   }
 
   function commandStart(newStackCount) {
@@ -238,7 +229,31 @@ window.onload = function() {
   }
 
   function commandNew() {
-    location.hash = generateBoardCode(stackCount, location.hash.slice(1));
+    boardCode = generateBoardCode(stackCount, location.hash.slice(1));
+    board = boardCodeToBoard(boardCode);
+    history.pushState(null, null, '#' + boardCode);
+    goPlay();
+  }
+
+  function goPlay() {
+    updateStackCount(board.length);
+    popIndex = -1;
+    pushIndex = -1;
+    moves = [];
+    var normalBoardCode = normalizeBoardCode(boardCode);
+    routeLimit = problemTable[board.length][normalBoardCode];
+    document.title = appName + ' ' + boardCode;
+    scene = scenePlay;
+    paint();
+  }
+
+  function updateStackCount(newStackCount) {
+    if (newStackCount === stackCount) {
+      return;
+    }
+    stackCount = newStackCount;
+    stackWidth = boardRect.width / stackCount;
+    pieceHeight = boardRect.height / (stackCount + 2);
   }
 
   function commandPop(stackIndex) {
