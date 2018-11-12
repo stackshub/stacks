@@ -27,6 +27,7 @@ window.onload = function() {
   var sceneResult = 2;
   var scene;
   var stackCount;
+  var boardCodeGenerator;
   var boardCode;
   var routeLimit;
   var board;
@@ -138,6 +139,7 @@ window.onload = function() {
     boardCode = location.hash.slice(1);
     board = boardCodeToBoard(boardCode);
     if (board) {
+      updateStackCount(board.length);
       goPlay();
       return;
     }
@@ -228,15 +230,21 @@ window.onload = function() {
     commandNew();
   }
 
+  function updateStackCount(newStackCount) {
+    stackCount = newStackCount;
+    stackWidth = boardRect.width / stackCount;
+    pieceHeight = boardRect.height / (stackCount + 2);
+    boardCodeGenerator = getBoardCodeGenerator(stackCount);
+  }
+
   function commandNew() {
-    boardCode = generateBoardCode(stackCount, location.hash.slice(1));
+    boardCode = boardCodeGenerator(location.hash.slice(1));
     board = boardCodeToBoard(boardCode);
     history.pushState(null, null, '#' + boardCode);
     goPlay();
   }
 
   function goPlay() {
-    updateStackCount(board.length);
     popIndex = -1;
     pushIndex = -1;
     moves = [];
@@ -245,15 +253,6 @@ window.onload = function() {
     document.title = appName + ' ' + boardCode;
     scene = scenePlay;
     paint();
-  }
-
-  function updateStackCount(newStackCount) {
-    if (newStackCount === stackCount) {
-      return;
-    }
-    stackCount = newStackCount;
-    stackWidth = boardRect.width / stackCount;
-    pieceHeight = boardRect.height / (stackCount + 2);
   }
 
   function commandPop(stackIndex) {
@@ -518,33 +517,36 @@ function normalizeBoardCode(boardCode) {
   return minBoardCode;
 }
 
-function generateBoardCode(stackCount, oldBoardCode) {
+function getBoardCodeGenerator(stackCount) {
   var kindCount = stackCount - 1;
-  var problemMap = problemTable[stackCount];
-  var normalBoardCodes = Object.keys(problemMap);
-  for (;;) {
-    var normalBoardCode = normalBoardCodes[randomInt(normalBoardCodes.length)];
-    var kindMap = new Array(kindCount);
-    for (var i = 0; i < kindCount; i++) {
-      kindMap[i] = i;
-    }
-    shuffleArray(kindMap);
-    var normalStackCodes = normalBoardCode.split('_');
-    shuffleArray(normalStackCodes);
-    var newBoardCode = normalStackCodes
-      .map(function(nsc) {
-        return nsc
-          .split('')
-          .map(function(c) {
-            return kindMap[parseInt(c)];
-          })
-          .join('');
-      })
-      .join('_');
-    if (newBoardCode !== oldBoardCode) {
-      return newBoardCode;
-    }
+  var kindMap = new Array(kindCount);
+  for (var i = 0; i < kindCount; i++) {
+    kindMap[i] = i;
   }
+  var boardCodes = Object.keys(problemTable[stackCount]);
+  shuffleArray(boardCodes);
+  var problemIndex = -1;
+  return function(oldBoardCode) {
+    problemIndex++;
+    var stackCodes = boardCodes[problemIndex % boardCodes.length].split('_');
+    for (;;) {
+      shuffleArray(kindMap);
+      shuffleArray(stackCodes);
+      var newBoardCode = stackCodes
+        .map(function(sc) {
+          return sc
+            .split('')
+            .map(function(c) {
+              return kindMap[parseInt(c)];
+            })
+            .join('');
+        })
+        .join('_');
+      if (newBoardCode !== oldBoardCode) {
+        return newBoardCode;
+      }
+    }
+  };
 }
 
 function isBoardArranged(board) {
