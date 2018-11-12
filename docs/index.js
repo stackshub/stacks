@@ -36,29 +36,29 @@ window.onload = function() {
   var moves;
 
   (function() {
-    var buttonWidth = (stageWidth - margin * 2) / 3;
+    var buttonWidth = (stageWidth - margin * 4) / 3;
     var buttonTop = (stageHeight - buttonWidth) / 2;
     titleLabelRect = new Rect(
-      margin + buttonWidth,
+      margin * 2 + buttonWidth,
       buttonTop - buttonWidth - margin,
       buttonWidth,
       buttonWidth
     );
     easyButtonRect = new Rect(margin, buttonTop, buttonWidth, buttonWidth);
     normalButtonRect = new Rect(
-      margin + buttonWidth,
+      margin * 2 + buttonWidth,
       buttonTop,
       buttonWidth,
       buttonWidth
     );
     hardButtonRect = new Rect(
-      margin + buttonWidth * 2,
+      margin * 3 + buttonWidth * 2,
       buttonTop,
       buttonWidth,
       buttonWidth
     );
     helpButtonRect = new Rect(
-      margin + buttonWidth,
+      margin * 2 + buttonWidth,
       buttonTop + buttonWidth + margin,
       buttonWidth,
       buttonWidth
@@ -74,13 +74,13 @@ window.onload = function() {
     var buttonHeight = (stageHeight - boardRect.height - margin * 4) / 2;
     homeButtonRect = new Rect(margin, margin, buttonWidth, buttonHeight);
     countLabelRect = new Rect(
-      margin + buttonWidth,
+      margin * 2 + buttonWidth,
       margin,
       buttonWidth,
       buttonHeight
     );
     shareButtonRect = new Rect(
-      margin + buttonWidth * 2,
+      margin * 3 + buttonWidth * 2,
       margin,
       buttonWidth,
       buttonHeight
@@ -88,13 +88,13 @@ window.onload = function() {
     buttonTop = stageHeight - buttonHeight - margin;
     retryButtonRect = new Rect(margin, buttonTop, buttonWidth, buttonHeight);
     okButtonRect = new Rect(
-      margin + buttonWidth,
+      margin * 2 + buttonWidth,
       buttonTop,
       buttonWidth,
       buttonHeight
     );
     undoButtonRect = new Rect(
-      margin + buttonWidth * 2,
+      margin * 3 + buttonWidth * 2,
       buttonTop,
       buttonWidth,
       buttonHeight
@@ -327,16 +327,10 @@ window.onload = function() {
   }
 
   function paint() {
-    context.fillStyle = 'black';
-    context.fillRect(0, 0, stageWidth, stageHeight);
+    context.clearRect(0, 0, stageWidth, stageHeight);
 
     if (scene === sceneHome) {
-      context.fillStyle = 'white';
-      context.fillText(
-        appName,
-        titleLabelRect.centerX(),
-        titleLabelRect.centerY()
-      );
+      paintLabel(appName, titleLabelRect);
       paintButton('Easy', easyButtonRect);
       paintButton('Normal', normalButtonRect);
       paintButton('Hard', hardButtonRect);
@@ -347,13 +341,17 @@ window.onload = function() {
     var poleWidth = stackWidth * 0.2;
     for (var i = 0; i < stackCount; i++) {
       var stackLeft = boardRect.left + stackWidth * i;
-      context.fillStyle = 'silver';
-      context.fillRect(
+      context.beginPath();
+      context.rect(
         stackLeft + (stackWidth - poleWidth) / 2,
         boardRect.top + pieceHeight,
         poleWidth,
         boardRect.height - pieceHeight
       );
+      context.fillStyle = 'silver';
+      context.fill();
+      context.stroke();
+
       context.beginPath();
       context.rect(
         stackLeft,
@@ -369,6 +367,7 @@ window.onload = function() {
         stackLeft + stackWidth / 2,
         boardRect.bottom() - pieceHeight / 2
       );
+
       var stack = board[i];
       var n = i === popIndex ? stack.length - 1 : stack.length;
       for (var j = 0; j < n; j++) {
@@ -388,11 +387,9 @@ window.onload = function() {
       );
     }
 
-    context.fillStyle = 'white';
-    context.fillText(
+    paintLabel(
       moves.length + ' / ' + (routeLimit > 0 ? routeLimit : '?'),
-      countLabelRect.centerX(),
-      countLabelRect.centerY()
+      countLabelRect
     );
     paintButton('Home', homeButtonRect);
     paintButton('Share', shareButtonRect);
@@ -454,13 +451,21 @@ window.onload = function() {
     context.stroke();
   }
 
+  function paintLabel(text, rect) {
+    paintTextBox(text, rect, 'dimgray', 'white');
+  }
+
   function paintButton(text, rect) {
+    paintTextBox(text, rect, 'silver', 'black');
+  }
+
+  function paintTextBox(text, rect, backgroundColor, foregroundColor) {
     context.beginPath();
     context.rect(rect.left, rect.top, rect.width, rect.height);
-    context.fillStyle = 'silver';
+    context.fillStyle = backgroundColor;
     context.fill();
     context.stroke();
-    context.fillStyle = 'black';
+    context.fillStyle = foregroundColor;
     context.fillText(text, rect.centerX(), rect.centerY());
   }
 };
