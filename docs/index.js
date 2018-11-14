@@ -18,8 +18,8 @@ window.onload = function() {
   var okButtonRect;
   var undoButtonRect;
   var boardRect;
-  var stackWidth;
-  var pieceHeight;
+  var stackButtonRects;
+  var pieceRectTable;
   var kindColors = ['blue', 'red', 'yellow', 'lime'];
   var stackNames = ['A', 'B', 'C', 'D', 'E'];
   var sceneHome = 0;
@@ -146,6 +146,33 @@ window.onload = function() {
     goHome();
   }
 
+  function updateStackCount(newStackCount) {
+    stackCount = newStackCount;
+    var stackWidth = boardRect.width / stackCount;
+    var pieceWidth = stackWidth - margin;
+    var pieceHeight = boardRect.height / (stackCount + 2);
+    stackButtonRects = new Array(stackCount);
+    pieceRectTable = new Array(stackCount);
+    for (var i = 0; i < stackCount; i++) {
+      var stackButtonRect = (stackButtonRects[i] = new Rect(
+        boardRect.left + stackWidth * i,
+        boardRect.bottom() - pieceHeight,
+        stackWidth,
+        pieceHeight
+      ));
+      var pieceRects = (pieceRectTable[i] = new Array(stackCount + 1));
+      for (var j = 0; j <= stackCount; j++) {
+        pieceRects[j] = new Rect(
+          stackButtonRect.left + margin / 2,
+          stackButtonRect.top - pieceHeight * (j + 1),
+          pieceWidth,
+          pieceHeight
+        );
+      }
+    }
+    boardCodeGenerator = getBoardCodeGenerator(stackCount);
+  }
+
   function onTouchStart(x, y) {
     if (scene === sceneHome) {
       if (easyButtonRect.contains(x, y)) {
@@ -206,7 +233,9 @@ window.onload = function() {
 
   function getTouchIndexAt(x, y) {
     if (y >= boardRect.top && y < boardRect.bottom()) {
-      var stackIndex = Math.floor((x - boardRect.left) / stackWidth);
+      var stackIndex = Math.floor(
+        (stackCount * (x - boardRect.left)) / boardRect.width
+      );
       if (stackIndex >= 0 && stackIndex < stackCount) {
         return stackIndex;
       }
@@ -228,13 +257,6 @@ window.onload = function() {
   function commandStart(newStackCount) {
     updateStackCount(newStackCount);
     commandNew();
-  }
-
-  function updateStackCount(newStackCount) {
-    stackCount = newStackCount;
-    stackWidth = boardRect.width / stackCount;
-    pieceHeight = boardRect.height / (stackCount + 2);
-    boardCodeGenerator = getBoardCodeGenerator(stackCount);
   }
 
   function commandNew() {
@@ -338,52 +360,37 @@ window.onload = function() {
       return;
     }
 
-    var poleWidth = stackWidth * 0.2;
+    context.beginPath();
+    var leftTopPieceRect = pieceRectTable[0][stackCount];
+    var rightButtonPieceRect = pieceRectTable[stackCount - 1][0];
+    context.moveTo(leftTopPieceRect.left, leftTopPieceRect.top);
+    for (var p = 0; p < stackCount; p++) {
+      var pieceRect = pieceRectTable[p][stackCount - 1];
+      context.lineTo(pieceRect.left, pieceRect.top);
+      context.lineTo(pieceRect.left, rightButtonPieceRect.bottom());
+      context.lineTo(pieceRect.right(), rightButtonPieceRect.bottom());
+      context.lineTo(pieceRect.right(), pieceRect.top);
+    }
+    context.lineTo(rightButtonPieceRect.right(), leftTopPieceRect.top);
+    context.closePath();
+    context.fillStyle = 'rgba(0, 0, 0, 0.2)';
+    context.fill();
+    context.stroke();
+
     for (var i = 0; i < stackCount; i++) {
-      var stackLeft = boardRect.left + stackWidth * i;
-      context.beginPath();
-      context.rect(
-        stackLeft + (stackWidth - poleWidth) / 2,
-        boardRect.top + pieceHeight,
-        poleWidth,
-        boardRect.height - pieceHeight
-      );
-      context.fillStyle = 'silver';
-      context.fill();
-      context.stroke();
-
-      context.beginPath();
-      context.rect(
-        stackLeft,
-        boardRect.bottom() - pieceHeight,
-        stackWidth,
-        pieceHeight
-      );
-      context.fill();
-      context.stroke();
-      context.fillStyle = 'black';
-      context.fillText(
-        stackNames[i],
-        stackLeft + stackWidth / 2,
-        boardRect.bottom() - pieceHeight / 2
-      );
-
+      paintButton(stackNames[i], stackButtonRects[i]);
       var stack = board[i];
+      var pieceRects = pieceRectTable[i];
       var n = i === popIndex ? stack.length - 1 : stack.length;
       for (var j = 0; j < n; j++) {
-        paintPiece(
-          stack[j],
-          stackLeft,
-          boardRect.top + pieceHeight * (stackCount - j)
-        );
+        paintPiece(stack[j], pieceRects[j]);
       }
     }
     if (popIndex >= 0) {
       var popStack = board[popIndex];
       paintPiece(
         popStack[popStack.length - 1],
-        boardRect.left + stackWidth * (pushIndex >= 0 ? pushIndex : popIndex),
-        boardRect.top
+        pieceRectTable[pushIndex >= 0 ? pushIndex : popIndex][stackCount]
       );
     }
 
@@ -400,22 +407,22 @@ window.onload = function() {
     }
   }
 
-  function paintPiece(pieceKind, pieceLeft, pieceTop) {
+  function paintPiece(pieceKind, pieceRect) {
     context.beginPath();
     switch (pieceKind) {
     case 1:
-      var r = pieceHeight / 2;
+      var r = pieceRect.height / 2;
       context.arc(
-        pieceLeft + r,
-        pieceTop + r,
+        pieceRect.left + r,
+        pieceRect.centerY(),
         r,
         Math.PI * 1.5,
         Math.PI * 0.5,
         true
       );
       context.arc(
-        pieceLeft + stackWidth - r,
-        pieceTop + pieceHeight - r,
+        pieceRect.right() - r,
+        pieceRect.centerY(),
         r,
         Math.PI * 0.5,
         Math.PI * 1.5,
@@ -424,27 +431,32 @@ window.onload = function() {
       context.closePath();
       break;
     case 2:
-      var h = pieceHeight / 4;
-      context.moveTo(pieceLeft + h, pieceTop);
-      context.lineTo(pieceLeft, pieceTop + pieceHeight / 2);
-      context.lineTo(pieceLeft + h, pieceTop + pieceHeight);
-      context.lineTo(pieceLeft + stackWidth - h, pieceTop + pieceHeight);
-      context.lineTo(pieceLeft + stackWidth, pieceTop + pieceHeight / 2);
-      context.lineTo(pieceLeft + stackWidth - h, pieceTop);
+      var h = pieceRect.height / 4;
+      context.moveTo(pieceRect.left + h, pieceRect.top);
+      context.lineTo(pieceRect.left, pieceRect.centerY());
+      context.lineTo(pieceRect.left + h, pieceRect.bottom());
+      context.lineTo(pieceRect.right() - h, pieceRect.bottom());
+      context.lineTo(pieceRect.right(), pieceRect.centerY());
+      context.lineTo(pieceRect.right() - h, pieceRect.top);
       context.closePath();
       break;
     case 3:
-      var d = pieceHeight / 4;
-      context.moveTo(pieceLeft, pieceTop);
-      context.lineTo(pieceLeft + d, pieceTop + pieceHeight / 2);
-      context.lineTo(pieceLeft, pieceTop + pieceHeight);
-      context.lineTo(pieceLeft + stackWidth, pieceTop + pieceHeight);
-      context.lineTo(pieceLeft + stackWidth - d, pieceTop + pieceHeight / 2);
-      context.lineTo(pieceLeft + stackWidth, pieceTop);
+      var d = pieceRect.height / 4;
+      context.moveTo(pieceRect.left, pieceRect.top);
+      context.lineTo(pieceRect.left + d, pieceRect.centerY());
+      context.lineTo(pieceRect.left, pieceRect.bottom());
+      context.lineTo(pieceRect.right(), pieceRect.bottom());
+      context.lineTo(pieceRect.right() - d, pieceRect.centerY());
+      context.lineTo(pieceRect.right(), pieceRect.top);
       context.closePath();
       break;
     default:
-      context.rect(pieceLeft, pieceTop, stackWidth, pieceHeight);
+      context.rect(
+        pieceRect.left,
+        pieceRect.top,
+        pieceRect.width,
+        pieceRect.height
+      );
     }
     context.fillStyle = kindColors[pieceKind];
     context.fill();
@@ -452,20 +464,17 @@ window.onload = function() {
   }
 
   function paintLabel(text, rect) {
-    paintTextBox(text, rect, 'dimgray', 'white');
+    context.fillStyle = 'black';
+    context.fillText(text, rect.centerX(), rect.centerY());
   }
 
   function paintButton(text, rect) {
-    paintTextBox(text, rect, 'silver', 'black');
-  }
-
-  function paintTextBox(text, rect, backgroundColor, foregroundColor) {
     context.beginPath();
     context.rect(rect.left, rect.top, rect.width, rect.height);
-    context.fillStyle = backgroundColor;
+    context.fillStyle = 'rgba(255, 255, 255, 0.2)';
     context.fill();
     context.stroke();
-    context.fillStyle = foregroundColor;
+    context.fillStyle = 'black';
     context.fillText(text, rect.centerX(), rect.centerY());
   }
 };

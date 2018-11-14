@@ -9,4 +9,4 @@ Stacks is a simple puzzle game using LIFO stacks in mobile and desktop browser.
 - First, tap a stack to pop a piece.
 - Then, tap another stack to push the piece.
 - Alternatively, drag between stacks to move a piece.
-- Finally, arrange all the pieces horizontally.
+- Finally, arrange all the stacks in the same order.
