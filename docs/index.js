@@ -114,6 +114,7 @@ window.onload = function() {
     window.onresize = window.onorientationchange = onResize;
     resize();
     (window.onhashchange = onHashChange)();
+    window.focus();
   })();
 
   function onResize() {
