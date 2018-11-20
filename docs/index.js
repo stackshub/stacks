@@ -34,6 +34,7 @@ window.onload = function() {
   var popIndex;
   var pushIndex;
   var moves;
+  var cursorIndex;
 
   (function() {
     var buttonWidth = (stageWidth - margin * 4) / 3;
@@ -261,13 +262,24 @@ window.onload = function() {
       commandPopPush(4);
       break;
     case 'Digit0':
+    case 'Escape':
       commandRetry();
       break;
     case 'Minus':
+    case 'ArrowDown':
       commandUndo();
       break;
     case 'Enter':
       commandOk();
+      break;
+    case 'ArrowLeft':
+      commandMoveCursor(-1);
+      break;
+    case 'ArrowRight':
+      commandMoveCursor(1);
+      break;
+    case 'Space':
+      commandPopPush(cursorIndex);
       break;
     }
   }
@@ -306,10 +318,24 @@ window.onload = function() {
     popIndex = -1;
     pushIndex = -1;
     moves = [];
+    cursorIndex = -1;
     var normalBoardCode = normalizeBoardCode(boardCode);
     routeLimit = problemTable[board.length][normalBoardCode];
     document.title = appName + ' ' + boardCode;
     scene = scenePlay;
+    paint();
+  }
+
+  function commandMoveCursor(d) {
+    cursorIndex += d;
+    if (cursorIndex < 0) {
+      cursorIndex = stackCount - 1;
+    } else if (cursorIndex >= stackCount) {
+      cursorIndex = 0;
+    }
+    if (popIndex >= 0) {
+      pushIndex = cursorIndex;
+    }
     paint();
   }
 
@@ -425,7 +451,16 @@ window.onload = function() {
     context.stroke();
 
     for (var i = 0; i < stackCount; i++) {
-      paintButton(stackNames[i], stackButtonRects[i]);
+      var stackButtonRect = stackButtonRects[i];
+      paintButton(stackNames[i], stackButtonRect);
+      if (i === cursorIndex) {
+        context.strokeRect(
+          stackButtonRect.left + margin,
+          stackButtonRect.top + margin,
+          stackButtonRect.width - margin * 2,
+          stackButtonRect.height - margin * 2
+        );
+      }
       var stack = board[i];
       var pieceRects = pieceRectTable[i];
       var n = i === popIndex ? stack.length - 1 : stack.length;
