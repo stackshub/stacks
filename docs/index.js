@@ -21,7 +21,7 @@ window.onload = function() {
   var stackButtonRects;
   var pieceRectTable;
   var kindColors = ['blue', 'red', 'yellow', 'lime'];
-  var stackNames = ['A', 'B', 'C', 'D', 'E'];
+  var stackNames = ['1', '2', '3', '4', '5'];
   var sceneHome = 0;
   var scenePlay = 1;
   var sceneResult = 2;
@@ -109,6 +109,7 @@ window.onload = function() {
     addTouchEndListener(canvas, function(x, y) {
       onTouchEnd(x / scale, y / scale);
     });
+    window.onkeydown = onKeyDown;
     window.onresize = window.onorientationchange = onResize;
     resize();
     (window.onhashchange = onHashChange)();
@@ -196,16 +197,12 @@ window.onload = function() {
         commandRetry();
       } else if (undoButtonRect.contains(x, y)) {
         commandUndo();
-      } else if (scene === sceneResult && okButtonRect.contains(x, y)) {
-        commandNew();
+      } else if (okButtonRect.contains(x, y)) {
+        commandOk();
       }
       return;
     }
-    if (popIndex < 0) {
-      commandPop(touchIndex);
-    } else {
-      commandPush(touchIndex);
-    }
+    commandPopPush(touchIndex);
   }
 
   function onTouchMove(x, y) {
@@ -243,6 +240,38 @@ window.onload = function() {
     return -1;
   }
 
+  function onKeyDown(event) {
+    if (scene == sceneHome) {
+      return;
+    }
+    switch (event.code) {
+    case 'Digit1':
+      commandPopPush(0);
+      break;
+    case 'Digit2':
+      commandPopPush(1);
+      break;
+    case 'Digit3':
+      commandPopPush(2);
+      break;
+    case 'Digit4':
+      commandPopPush(3);
+      break;
+    case 'Digit5':
+      commandPopPush(4);
+      break;
+    case 'Digit0':
+      commandRetry();
+      break;
+    case 'Minus':
+      commandUndo();
+      break;
+    case 'Enter':
+      commandOk();
+      break;
+    }
+  }
+
   function commandHome() {
     history.pushState(null, null, '#');
     goHome();
@@ -256,6 +285,13 @@ window.onload = function() {
 
   function commandStart(newStackCount) {
     updateStackCount(newStackCount);
+    commandNew();
+  }
+
+  function commandOk() {
+    if (scene !== sceneResult) {
+      return;
+    }
     commandNew();
   }
 
@@ -275,6 +311,17 @@ window.onload = function() {
     document.title = appName + ' ' + boardCode;
     scene = scenePlay;
     paint();
+  }
+
+  function commandPopPush(stackIndex) {
+    if (!(stackIndex >= 0 && stackIndex < stackCount)) {
+      return;
+    }
+    if (popIndex < 0) {
+      commandPop(stackIndex);
+    } else {
+      commandPush(stackIndex);
+    }
   }
 
   function commandPop(stackIndex) {
