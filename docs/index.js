@@ -392,7 +392,7 @@ window.onload = function() {
   }
 
   function commandUndo() {
-    if (moves.length > 0) {
+    if (popIndex < 0 && moves.length > 0) {
       var move = moves[moves.length - 1];
       board[move[0]].push(board[move[1]].pop());
       moves.splice(moves.length - 1, 1);
