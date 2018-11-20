@@ -245,40 +245,46 @@ window.onload = function() {
     if (scene == sceneHome) {
       return;
     }
-    switch (event.code) {
-    case 'Digit1':
+    switch (event.key) {
+    case '1':
       commandPopPush(0);
       break;
-    case 'Digit2':
+    case '2':
       commandPopPush(1);
       break;
-    case 'Digit3':
+    case '3':
       commandPopPush(2);
       break;
-    case 'Digit4':
+    case '4':
       commandPopPush(3);
       break;
-    case 'Digit5':
+    case '5':
       commandPopPush(4);
       break;
-    case 'Digit0':
+    case '0':
     case 'Escape':
+    case 'Esc':
       commandRetry();
       break;
-    case 'Minus':
+    case '-':
+    case 'Subtract':
     case 'ArrowDown':
+    case 'Down':
       commandUndo();
       break;
     case 'Enter':
       commandOk();
       break;
     case 'ArrowLeft':
+    case 'Left':
       commandMoveCursor(-1);
       break;
     case 'ArrowRight':
+    case 'Right':
       commandMoveCursor(1);
       break;
-    case 'Space':
+    case ' ':
+    case 'Spacebar':
       commandPopPush(cursorIndex);
       break;
     }
