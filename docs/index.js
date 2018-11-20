@@ -33,8 +33,8 @@ window.onload = function() {
   var board;
   var popIndex;
   var pushIndex;
-  var moves;
   var cursorIndex;
+  var moves;
 
   (function() {
     var buttonWidth = (stageWidth - margin * 4) / 3;
@@ -173,6 +173,7 @@ window.onload = function() {
       }
     }
     boardCodeGenerator = getBoardCodeGenerator(stackCount);
+    cursorIndex = -1;
   }
 
   function onTouchStart(x, y) {
@@ -324,7 +325,6 @@ window.onload = function() {
     popIndex = -1;
     pushIndex = -1;
     moves = [];
-    cursorIndex = -1;
     var normalBoardCode = normalizeBoardCode(boardCode);
     routeLimit = problemTable[board.length][normalBoardCode];
     document.title = appName + ' ' + boardCode;
