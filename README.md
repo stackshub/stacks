@@ -1,8 +1,10 @@
 # Stacks
 
-Stacks is a simple puzzle game using LIFO stacks in mobile and desktop browser.
+Stacks is a simple puzzle game like the [Tower of Hanoi](https://en.wikipedia.org/wiki/Tower_of_Hanoi).
+This game is playable in mobile and desktop browser.
 
-[Play it now!](https://stackshub.github.io/stacks/)
+- Playable: https://stackshub.github.io/stacks/
+- Repository: https://github.com/stackshub/stacks
 
 ## How to play
 
@@ -10,3 +12,14 @@ Stacks is a simple puzzle game using LIFO stacks in mobile and desktop browser.
 - Then, tap another stack to push the piece.
 - Alternatively, drag between stacks to move a piece.
 - Finally, arrange all the stacks in the same order.
+
+### Keyboard controls
+
+| Key           | Control                          |
+| ------------- | -------------------------------- |
+| Left, Right   | Move cursor                      |
+| Space         | Pop / Push (at cursor)           |
+| Down, \-      | Undo                             |
+| Escape, 0     | Retry                            |
+| 1, 2, 3, 4, 5 | Pop / Push (corresponding stack) |
+| Enter         | OK                               |
