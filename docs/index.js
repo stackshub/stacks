@@ -299,7 +299,10 @@ window.onload = function() {
     case 'Spacebar':
       commandOk();
       break;
+    default:
+      return;
     }
+    preventEvent(event);
   }
 
   function commandHome() {
