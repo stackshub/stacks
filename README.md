@@ -17,9 +17,10 @@ This game is playable in mobile and desktop browser.
 
 | Key           | Control                          |
 | ------------- | -------------------------------- |
-| Left, Right   | Move cursor                      |
-| Space         | Pop / Push (at cursor)           |
-| Down, \-      | Undo                             |
+| Left, A       | Move cursor left                 |
+| Right, D      | Move cursor right                |
+| Up, W         | Pop / Push (at cursor)           |
+| Down, S, \-   | Undo                             |
 | Escape, 0     | Retry                            |
 | 1, 2, 3, 4, 5 | Pop / Push (corresponding stack) |
-| Enter         | OK                               |
+| Enter, Space  | OK                               |

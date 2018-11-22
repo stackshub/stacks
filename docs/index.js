@@ -248,6 +248,37 @@ window.onload = function() {
       return;
     }
     switch (event.key) {
+    case 'ArrowLeft':
+    case 'Left':
+    case 'a':
+    case 'A':
+      commandMoveCursor(-1);
+      break;
+    case 'ArrowRight':
+    case 'Right':
+    case 'd':
+    case 'D':
+      commandMoveCursor(1);
+      break;
+    case 'ArrowUp':
+    case 'Up':
+    case 'w':
+    case 'W':
+      commandPopPush(cursorIndex);
+      break;
+    case 'ArrowDown':
+    case 'Down':
+    case 's':
+    case 'S':
+    case '-':
+    case 'Subtract':
+      commandUndo();
+      break;
+    case 'Escape':
+    case 'Esc':
+    case '0':
+      commandRetry();
+      break;
     case '1':
       commandPopPush(0);
       break;
@@ -263,31 +294,10 @@ window.onload = function() {
     case '5':
       commandPopPush(4);
       break;
-    case '0':
-    case 'Escape':
-    case 'Esc':
-      commandRetry();
-      break;
-    case '-':
-    case 'Subtract':
-    case 'ArrowDown':
-    case 'Down':
-      commandUndo();
-      break;
     case 'Enter':
-      commandOk();
-      break;
-    case 'ArrowLeft':
-    case 'Left':
-      commandMoveCursor(-1);
-      break;
-    case 'ArrowRight':
-    case 'Right':
-      commandMoveCursor(1);
-      break;
     case ' ':
     case 'Spacebar':
-      commandPopPush(cursorIndex);
+      commandOk();
       break;
     }
   }
