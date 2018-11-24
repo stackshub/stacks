@@ -7,11 +7,9 @@ window.onload = function() {
   var scale;
   var margin = 10;
   var titleLabelRect;
-  var easyButtonRect;
-  var normalButtonRect;
-  var hardButtonRect;
+  var levelButtonRects = new Array(3);
   var helpButtonRect;
-  var homeButtonRect;
+  var quitButtonRect;
   var countLabelRect;
   var shareButtonRect;
   var retryButtonRect;
@@ -26,6 +24,7 @@ window.onload = function() {
   var scenePlay = 1;
   var sceneResult = 2;
   var scene;
+  var cursorIndex = -1;
   var stackCount;
   var boardCodeGenerator;
   var boardCode;
@@ -33,7 +32,6 @@ window.onload = function() {
   var board;
   var popIndex;
   var pushIndex;
-  var cursorIndex;
   var moves;
 
   (function() {
@@ -45,19 +43,16 @@ window.onload = function() {
       buttonWidth,
       buttonWidth
     );
-    easyButtonRect = new Rect(margin, buttonTop, buttonWidth, buttonWidth);
-    normalButtonRect = new Rect(
-      margin * 2 + buttonWidth,
-      buttonTop,
-      buttonWidth,
-      buttonWidth
-    );
-    hardButtonRect = new Rect(
-      margin * 3 + buttonWidth * 2,
-      buttonTop,
-      buttonWidth,
-      buttonWidth
-    );
+    var buttonLeft = margin;
+    for (var l = 0; l < levelButtonRects.length; l++) {
+      levelButtonRects[l] = new Rect(
+        buttonLeft,
+        buttonTop,
+        buttonWidth,
+        buttonWidth
+      );
+      buttonLeft += buttonWidth + margin;
+    }
     helpButtonRect = new Rect(
       margin * 2 + buttonWidth,
       buttonTop + buttonWidth + margin,
@@ -73,7 +68,7 @@ window.onload = function() {
       boardWidth
     );
     var buttonHeight = (stageHeight - boardRect.height - margin * 4) / 2;
-    homeButtonRect = new Rect(margin, margin, buttonWidth, buttonHeight);
+    quitButtonRect = new Rect(margin, margin, buttonWidth, buttonHeight);
     countLabelRect = new Rect(
       margin * 2 + buttonWidth,
       margin,
@@ -174,26 +169,25 @@ window.onload = function() {
       }
     }
     boardCodeGenerator = getBoardCodeGenerator(stackCount);
-    cursorIndex = -1;
   }
 
   function onTouchStart(x, y) {
     if (scene === sceneHome) {
-      if (easyButtonRect.contains(x, y)) {
-        commandStart(3);
-      } else if (normalButtonRect.contains(x, y)) {
-        commandStart(4);
-      } else if (hardButtonRect.contains(x, y)) {
-        commandStart(5);
-      } else if (helpButtonRect.contains(x, y)) {
+      for (var l = 0; l < levelButtonRects.length; l++) {
+        if (levelButtonRects[l].contains(x, y)) {
+          commandStart(l + 3);
+          return;
+        }
+      }
+      if (helpButtonRect.contains(x, y)) {
         commandHelp();
       }
       return;
     }
     var touchIndex = getTouchIndexAt(x, y);
     if (touchIndex < 0) {
-      if (homeButtonRect.contains(x, y)) {
-        commandHome();
+      if (quitButtonRect.contains(x, y)) {
+        commandQuit();
       } else if (shareButtonRect.contains(x, y)) {
         commandShare();
       } else if (retryButtonRect.contains(x, y)) {
@@ -245,67 +239,97 @@ window.onload = function() {
 
   function onKeyDown(event) {
     if (scene == sceneHome) {
-      return;
-    }
-    switch (event.key) {
-    case 'ArrowLeft':
-    case 'Left':
-    case 'a':
-    case 'A':
-      commandMoveCursor(-1);
-      break;
-    case 'ArrowRight':
-    case 'Right':
-    case 'd':
-    case 'D':
-      commandMoveCursor(1);
-      break;
-    case 'ArrowUp':
-    case 'Up':
-    case 'w':
-    case 'W':
-      commandPopPush(cursorIndex);
-      break;
-    case 'ArrowDown':
-    case 'Down':
-    case 's':
-    case 'S':
-    case '-':
-    case 'Subtract':
-      commandUndo();
-      break;
-    case 'Escape':
-    case 'Esc':
-    case '0':
-      commandRetry();
-      break;
-    case '1':
-      commandPopPush(0);
-      break;
-    case '2':
-      commandPopPush(1);
-      break;
-    case '3':
-      commandPopPush(2);
-      break;
-    case '4':
-      commandPopPush(3);
-      break;
-    case '5':
-      commandPopPush(4);
-      break;
-    case 'Enter':
-    case ' ':
-    case 'Spacebar':
-      commandOk();
-      break;
-    default:
-      return;
+      switch (event.key) {
+      case 'ArrowLeft':
+      case 'Left':
+      case 'a':
+        commandLevelCursor(-1);
+        break;
+      case 'ArrowRight':
+      case 'Right':
+      case 'd':
+        commandLevelCursor(1);
+        break;
+      case 'Enter':
+      case ' ':
+      case 'Spacebar':
+        commandLevelSelect();
+        break;
+      case '1':
+        commandStart(3);
+        break;
+      case '2':
+        commandStart(4);
+        break;
+      case '3':
+        commandStart(5);
+        break;
+      default:
+        return;
+      }
+    } else {
+      switch (event.key) {
+      case 'ArrowLeft':
+      case 'Left':
+      case 'a':
+        commandStackCursor(-1);
+        break;
+      case 'ArrowRight':
+      case 'Right':
+      case 'd':
+        commandStackCursor(1);
+        break;
+      case 'ArrowUp':
+      case 'Up':
+      case 'w':
+        commandPopPush(cursorIndex);
+        break;
+      case 'ArrowDown':
+      case 'Down':
+      case 's':
+      case '-':
+      case 'Subtract':
+        commandUndo();
+        break;
+      case 'Escape':
+      case 'Esc':
+      case '0':
+        commandRetry();
+        break;
+      case '1':
+        commandPopPush(0);
+        break;
+      case '2':
+        commandPopPush(1);
+        break;
+      case '3':
+        commandPopPush(2);
+        break;
+      case '4':
+        commandPopPush(3);
+        break;
+      case '5':
+        commandPopPush(4);
+        break;
+      case 'Enter':
+      case ' ':
+      case 'Spacebar':
+        commandOk();
+        break;
+      case 'Q':
+        commandQuit();
+        break;
+      default:
+        return;
+      }
     }
     preventEvent(event);
   }
 
-  function commandHome() {
+  function commandQuit() {
+    if (cursorIndex >= 0) {
+      cursorIndex = stackCount - 3;
+    }
     history.pushState(null, null, '#');
     goHome();
   }
@@ -316,7 +340,27 @@ window.onload = function() {
     paint();
   }
 
+  function commandLevelCursor(d) {
+    cursorIndex += d;
+    if (cursorIndex < 0) {
+      cursorIndex = levelButtonRects.length - 1;
+    } else if (cursorIndex >= levelButtonRects.length) {
+      cursorIndex = 0;
+    }
+    paint();
+  }
+
+  function commandLevelSelect() {
+    if (cursorIndex < 0) {
+      return;
+    }
+    commandStart(cursorIndex + 3);
+  }
+
   function commandStart(newStackCount) {
+    if (cursorIndex >= 0) {
+      cursorIndex = 0;
+    }
     updateStackCount(newStackCount);
     commandNew();
   }
@@ -346,7 +390,7 @@ window.onload = function() {
     paint();
   }
 
-  function commandMoveCursor(d) {
+  function commandStackCursor(d) {
     cursorIndex += d;
     if (cursorIndex < 0) {
       cursorIndex = stackCount - 1;
@@ -446,9 +490,9 @@ window.onload = function() {
 
     if (scene === sceneHome) {
       paintLabel(appName, titleLabelRect);
-      paintButton('Easy', easyButtonRect);
-      paintButton('Normal', normalButtonRect);
-      paintButton('Hard', hardButtonRect);
+      for (var l = 0; l < levelButtonRects.length; l++) {
+        paintButton('Level ' + (l + 1), levelButtonRects[l], l === cursorIndex);
+      }
       paintButton('Help', helpButtonRect);
       return;
     }
@@ -472,15 +516,7 @@ window.onload = function() {
 
     for (var i = 0; i < stackCount; i++) {
       var stackButtonRect = stackButtonRects[i];
-      paintButton(stackNames[i], stackButtonRect);
-      if (i === cursorIndex) {
-        context.strokeRect(
-          stackButtonRect.left + margin,
-          stackButtonRect.top + margin,
-          stackButtonRect.width - margin * 2,
-          stackButtonRect.height - margin * 2
-        );
-      }
+      paintButton(stackNames[i], stackButtonRect, i === cursorIndex);
       var stack = board[i];
       var pieceRects = pieceRectTable[i];
       var n = i === popIndex ? stack.length - 1 : stack.length;
@@ -500,7 +536,7 @@ window.onload = function() {
       moves.length + ' / ' + (routeLimit > 0 ? routeLimit : '?'),
       countLabelRect
     );
-    paintButton('Home', homeButtonRect);
+    paintButton('Quit', quitButtonRect);
     paintButton('Share', shareButtonRect);
     paintButton('Retry', retryButtonRect);
     paintButton('Undo', undoButtonRect);
@@ -570,7 +606,7 @@ window.onload = function() {
     context.fillText(text, rect.centerX(), rect.centerY());
   }
 
-  function paintButton(text, rect) {
+  function paintButton(text, rect, cursor) {
     context.beginPath();
     context.rect(rect.left, rect.top, rect.width, rect.height);
     context.fillStyle = 'rgba(255, 255, 255, 0.2)';
@@ -578,6 +614,14 @@ window.onload = function() {
     context.stroke();
     context.fillStyle = 'black';
     context.fillText(text, rect.centerX(), rect.centerY());
+    if (cursor) {
+      context.strokeRect(
+        rect.left + margin,
+        rect.top + margin,
+        rect.width - margin * 2,
+        rect.height - margin * 2
+      );
+    }
   }
 };
 

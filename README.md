@@ -24,3 +24,4 @@ This game is playable in mobile and desktop browser.
 | Escape, 0     | Retry                            |
 | 1, 2, 3, 4, 5 | Pop / Push (corresponding stack) |
 | Enter, Space  | OK                               |
+| Shift + Q     | Quit                             |
