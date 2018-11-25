@@ -238,6 +238,9 @@ window.onload = function() {
   }
 
   function onKeyDown(event) {
+    if (event.altKey || event.ctrlKey || event.metaKey) {
+      return;
+    }
     if (scene == sceneHome) {
       switch (event.key) {
       case 'ArrowLeft':
@@ -330,7 +333,7 @@ window.onload = function() {
     if (cursorIndex >= 0) {
       cursorIndex = stackCount - 3;
     }
-    history.pushState(null, null, '#');
+    history.replaceState(null, null, '#');
     goHome();
   }
 
@@ -375,7 +378,7 @@ window.onload = function() {
   function commandNew() {
     boardCode = boardCodeGenerator(location.hash.slice(1));
     board = boardCodeToBoard(boardCode);
-    history.pushState(null, null, '#' + boardCode);
+    history.replaceState(null, null, '#' + boardCode);
     goPlay();
   }
 
