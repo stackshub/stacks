@@ -13,7 +13,7 @@ window.onload = function() {
   var countLabelRect;
   var shareButtonRect;
   var retryButtonRect;
-  var okButtonRect;
+  var doneButtonRect;
   var undoButtonRect;
   var boardRect;
   var stackButtonRects;
@@ -23,6 +23,7 @@ window.onload = function() {
   var sceneHome = 0;
   var scenePlay = 1;
   var sceneResult = 2;
+  var sceneCompleted = 3;
   var scene;
   var cursorIndex = -1;
   var stackCount;
@@ -33,6 +34,14 @@ window.onload = function() {
   var popIndex;
   var pushIndex;
   var moves;
+  var notificationId = 0;
+  var notificationText;
+  var notificationColor;
+  var notificationRect;
+  var successColor = '#99ffff';
+  var completeColor = '#ffff99';
+  var failureColor = '#ff99ff';
+  var textColor = 'black';
 
   (function() {
     var buttonWidth = (stageWidth - margin * 4) / 3;
@@ -83,7 +92,7 @@ window.onload = function() {
     );
     buttonTop = stageHeight - buttonHeight - margin;
     retryButtonRect = new Rect(margin, buttonTop, buttonWidth, buttonHeight);
-    okButtonRect = new Rect(
+    doneButtonRect = new Rect(
       margin * 2 + buttonWidth,
       buttonTop,
       buttonWidth,
@@ -127,7 +136,7 @@ window.onload = function() {
     context.scale(scale, scale);
     context.textAlign = 'center';
     context.textBaseline = 'middle';
-    context.font = '20px sans-serif';
+    context.font = '18px sans-serif';
     context.lineWidth = 2;
     context.lineJoin = 'bevel';
     context.strokeStyle = 'black';
@@ -168,6 +177,13 @@ window.onload = function() {
         );
       }
     }
+    var notificationWidth = boardRect.width - pieceWidth;
+    notificationRect = new Rect(
+      (stageWidth - notificationWidth) / 2,
+      boardRect.top + pieceHeight / 2,
+      notificationWidth,
+      pieceHeight
+    );
     problemList = new ProblemList(stackCount);
   }
 
@@ -194,8 +210,8 @@ window.onload = function() {
         commandRetry();
       } else if (undoButtonRect.contains(x, y)) {
         commandUndo();
-      } else if (okButtonRect.contains(x, y)) {
-        commandOk();
+      } else if (doneButtonRect.contains(x, y)) {
+        commandDone();
       }
       return;
     }
@@ -317,7 +333,7 @@ window.onload = function() {
       case 'Enter':
       case ' ':
       case 'Spacebar':
-        commandOk();
+        commandDone();
         break;
       case 'Q':
         commandQuit();
@@ -365,17 +381,18 @@ window.onload = function() {
       cursorIndex = 0;
     }
     updateStackCount(newStackCount);
-    commandNew();
+    commandNext();
   }
 
-  function commandOk() {
-    if (scene !== sceneResult) {
-      return;
+  function commandDone() {
+    if (scene === sceneResult) {
+      commandNext();
+    } else if (scene === sceneCompleted) {
+      commandQuit();
     }
-    commandNew();
   }
 
-  function commandNew() {
+  function commandNext() {
     boardCode = problemList.next(location.hash.slice(1));
     board = boardCodeToBoard(boardCode);
     history.replaceState(null, null, '#' + boardCode);
@@ -383,6 +400,10 @@ window.onload = function() {
   }
 
   function goPlay() {
+    if (notificationId > 0) {
+      clearTimeout(notificationId);
+      notificationId = 0;
+    }
     popIndex = -1;
     pushIndex = -1;
     moves = [];
@@ -433,12 +454,22 @@ window.onload = function() {
       if (dstStack.length < stackCount) {
         dstStack.push(board[popIndex].pop());
         moves.push([popIndex, stackIndex]);
-        if (
-          scene !== sceneResult &&
-          moves.length <= routeLimit &&
-          isBoardArranged(board)
-        ) {
-          scene = sceneResult;
+        if (scene === scenePlay) {
+          if (isBoardArranged(board)) {
+            if (moves.length <= routeLimit) {
+              if (problemList.hasNext()) {
+                showNotification('Cleared', successColor);
+                scene = sceneResult;
+              } else {
+                showNotification('Level Completed', completeColor);
+                scene = sceneCompleted;
+              }
+            }
+          } else {
+            if (moves.length === routeLimit) {
+              showNotification('Not Cleared', failureColor);
+            }
+          }
         }
       }
     }
@@ -486,6 +517,18 @@ window.onload = function() {
 
   function openUrl(url) {
     parent.location.href = url;
+  }
+
+  function showNotification(text, color) {
+    if (notificationId > 0) {
+      clearTimeout(notificationId);
+    }
+    notificationText = text;
+    notificationColor = color;
+    notificationId = setTimeout(function() {
+      notificationId = 0;
+      paint();
+    }, 1000);
   }
 
   function paint() {
@@ -536,17 +579,32 @@ window.onload = function() {
     }
 
     paintLabel(
-      moves.length + ' - ' + (routeLimit > 0 ? routeLimit : '?'),
+      'Limit ' +
+        (routeLimit > 0 ? routeLimit : '?') +
+        '\nMoves ' +
+        moves.length,
       countLabelRect
     );
     paintButton('Quit', quitButtonRect);
     paintButton('Share', shareButtonRect);
     paintButton('Retry', retryButtonRect);
     paintButton('Undo', undoButtonRect);
-    if (scene === sceneResult) {
-      paintButton('OK', okButtonRect);
-    } else {
-      paintLabel(problemList.toString(), okButtonRect);
+    if (scene === scenePlay) {
+      paintLabel(
+        'Level ' + (stackCount - 2) + '\n' + problemList.toString(),
+        doneButtonRect
+      );
+    } else if (scene === sceneResult) {
+      paintButton('Next', doneButtonRect, false, successColor);
+    } else if (scene === sceneCompleted) {
+      paintButton('Finish', doneButtonRect, false, completeColor);
+    }
+    if (notificationId > 0) {
+      context.beginPath();
+      drawOval(notificationRect);
+      context.fillStyle = notificationColor;
+      context.fill();
+      paintLabel(notificationText, notificationRect);
     }
   }
 
@@ -554,24 +612,7 @@ window.onload = function() {
     context.beginPath();
     switch (pieceKind) {
     case 1:
-      var r = pieceRect.height / 2;
-      context.arc(
-        pieceRect.left + r,
-        pieceRect.centerY(),
-        r,
-        Math.PI * 1.5,
-        Math.PI * 0.5,
-        true
-      );
-      context.arc(
-        pieceRect.right() - r,
-        pieceRect.centerY(),
-        r,
-        Math.PI * 0.5,
-        Math.PI * 1.5,
-        true
-      );
-      context.closePath();
+      drawOval(pieceRect);
       break;
     case 2:
       var h = pieceRect.height / 4;
@@ -606,18 +647,44 @@ window.onload = function() {
     context.stroke();
   }
 
-  function paintLabel(text, rect) {
-    context.fillStyle = 'black';
-    context.fillText(text, rect.centerX(), rect.centerY());
+  function drawOval(rect) {
+    var r = rect.height / 2;
+    context.arc(
+      rect.left + r,
+      rect.centerY(),
+      r,
+      Math.PI * 1.5,
+      Math.PI * 0.5,
+      true
+    );
+    context.arc(
+      rect.right() - r,
+      rect.centerY(),
+      r,
+      Math.PI * 0.5,
+      Math.PI * 1.5,
+      true
+    );
+    context.closePath();
   }
 
-  function paintButton(text, rect, cursor) {
+  function paintLabel(text, rect) {
+    var lines = text.split('\n');
+    var h = rect.height / lines.length;
+    var y = rect.top + h / 2;
+    context.fillStyle = textColor;
+    for (var i = 0; i < lines.length; i++) {
+      context.fillText(lines[i], rect.centerX(), y + h * i);
+    }
+  }
+
+  function paintButton(text, rect, cursor, color) {
     context.beginPath();
     context.rect(rect.left, rect.top, rect.width, rect.height);
-    context.fillStyle = 'rgba(255, 255, 255, 0.2)';
+    context.fillStyle = color || 'rgba(255, 255, 255, 0.2)';
     context.fill();
     context.stroke();
-    context.fillStyle = 'black';
+    context.fillStyle = textColor;
     context.fillText(text, rect.centerX(), rect.centerY());
     if (cursor) {
       context.strokeRect(
@@ -642,7 +709,15 @@ function ProblemList(stackCount) {
 }
 
 ProblemList.prototype.toString = function() {
-  return this.problemIndex + 1 + ' / ' + this.boardCodes.length;
+  var n =
+    this.problemIndex >= 0
+      ? (this.problemIndex % this.boardCodes.length) + 1
+      : 0;
+  return n + ' / ' + this.boardCodes.length;
+};
+
+ProblemList.prototype.hasNext = function() {
+  return this.problemIndex < this.boardCodes.length - 1;
 };
 
 ProblemList.prototype.next = function(oldBoardCode) {

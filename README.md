@@ -11,7 +11,7 @@ This game is playable in mobile and desktop browser.
 - First, tap a stack to pop a piece.
 - Then, tap another stack to push the piece.
 - Alternatively, drag between stacks to move a piece.
-- Finally, arrange all the stacks in the same order.
+- Finally, arrange all the stacks in the same order within the limit of moves.
 
 ### Keyboard controls
 
@@ -23,5 +23,5 @@ This game is playable in mobile and desktop browser.
 | Down, S, \-   | Undo                             |
 | Escape, 0     | Retry                            |
 | 1, 2, 3, 4, 5 | Pop / Push (corresponding stack) |
-| Enter, Space  | OK                               |
+| Enter, Space  | Next                             |
 | Shift + Q     | Quit                             |
