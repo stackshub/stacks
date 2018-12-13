@@ -27,7 +27,6 @@ window.onload = function() {
   var scene;
   var cursorIndex = -1;
   var stackCount;
-  var problemList;
   var boardCode;
   var routeLimit;
   var board;
@@ -42,6 +41,7 @@ window.onload = function() {
   var completeColor = '#ffff99';
   var failureColor = '#ff99ff';
   var textColor = 'black';
+  var recordTable = {};
 
   (function() {
     var buttonWidth = (stageWidth - margin * 4) / 3;
@@ -104,6 +104,10 @@ window.onload = function() {
       buttonWidth,
       buttonHeight
     );
+
+    for (var s = 3; s <= 5; s++) {
+      recordTable[s] = loadRecords(s);
+    }
 
     addTouchStartListener(canvas, function(x, y) {
       onTouchStart(x / scale, y / scale);
@@ -184,7 +188,6 @@ window.onload = function() {
       notificationWidth,
       pieceHeight
     );
-    problemList = new ProblemList(stackCount);
   }
 
   function onTouchStart(x, y) {
@@ -393,7 +396,36 @@ window.onload = function() {
   }
 
   function commandNext() {
-    boardCode = problemList.next(location.hash.slice(1));
+    var kindCount = stackCount - 1;
+    var kindMap = new Array(kindCount);
+    for (var i = 0; i < kindCount; i++) {
+      kindMap[i] = i;
+    }
+    shuffleArray(kindMap);
+    var problemCodes = Object.keys(problemTable[stackCount]);
+    var records = recordTable[stackCount];
+    if (Object.keys(records).length < problemCodes.length) {
+      for (var p = problemCodes.length - 1; p >= 0; p--) {
+        var problemCode = problemCodes[p];
+        if (records[problemCode]) {
+          problemCodes.splice(p, 1);
+        }
+      }
+    } else {
+      recordTable[stackCount] = {};
+    }
+    var stackCodes = problemCodes[randomInt(problemCodes.length)].split('_');
+    shuffleArray(stackCodes);
+    boardCode = stackCodes
+      .map(function(sc) {
+        return sc
+          .split('')
+          .map(function(c) {
+            return kindMap[parseInt(c)];
+          })
+          .join('');
+      })
+      .join('_');
     board = boardCodeToBoard(boardCode);
     history.replaceState(null, null, '#' + boardCode);
     goPlay();
@@ -454,21 +486,29 @@ window.onload = function() {
       if (dstStack.length < stackCount) {
         dstStack.push(board[popIndex].pop());
         moves.push([popIndex, stackIndex]);
-        if (scene === scenePlay) {
-          if (isBoardArranged(board)) {
-            if (moves.length <= routeLimit) {
-              if (problemList.hasNext()) {
-                showNotification('Cleared', successColor);
-                scene = sceneResult;
-              } else {
-                showNotification('Level Completed', completeColor);
-                scene = sceneCompleted;
-              }
+        if (isBoardArranged(board)) {
+          if (moves.length <= routeLimit) {
+            var records = recordTable[stackCount];
+            var patternCode = normalizeBoardCode(boardCode);
+            var completed = false;
+            if (!records[patternCode]) {
+              records[patternCode] = 1;
+              saveRecords(stackCount, records);
+              completed =
+                Object.keys(records).length ===
+                Object.keys(problemTable[stackCount]).length;
             }
-          } else {
-            if (moves.length === routeLimit) {
-              showNotification('Not Cleared', failureColor);
+            if (completed) {
+              showNotification('Level Completed', completeColor);
+              scene = sceneCompleted;
+            } else {
+              showNotification('Cleared', successColor);
+              scene = sceneResult;
             }
+          }
+        } else {
+          if (moves.length === routeLimit) {
+            showNotification('Not Cleared', failureColor);
           }
         }
       }
@@ -531,15 +571,23 @@ window.onload = function() {
     }, 1000);
   }
 
+  function loadRecords(stackCount) {
+    return JSON.parse(localStorage.getItem('stacks_' + stackCount)) || {};
+  }
+
+  function saveRecords(stackCount, records) {
+    localStorage.setItem('stacks_' + stackCount, JSON.stringify(records));
+  }
+
   function paint() {
     context.clearRect(0, 0, stageWidth, stageHeight);
 
     if (scene === sceneHome) {
       paintLabel(appName, titleLabelRect);
       for (var l = 0; l < levelButtonRects.length; l++) {
-        paintButton('Level ' + (l + 1), levelButtonRects[l], l === cursorIndex);
+        paintButton(formatLevelText(l), levelButtonRects[l], l === cursorIndex);
       }
-      paintButton('Help', helpButtonRect);
+      paintButton('README', helpButtonRect);
       return;
     }
 
@@ -586,14 +634,11 @@ window.onload = function() {
       countLabelRect
     );
     paintButton('Quit', quitButtonRect);
-    paintButton('Share', shareButtonRect);
+    paintButton('Tweet', shareButtonRect);
     paintButton('Retry', retryButtonRect);
     paintButton('Undo', undoButtonRect);
     if (scene === scenePlay) {
-      paintLabel(
-        'Level ' + (stackCount - 2) + '\n' + problemList.toString(),
-        doneButtonRect
-      );
+      paintLabel(formatLevelText(stackCount - 3), doneButtonRect);
     } else if (scene === sceneResult) {
       paintButton('Next', doneButtonRect, false, successColor);
     } else if (scene === sceneCompleted) {
@@ -606,6 +651,17 @@ window.onload = function() {
       context.fill();
       paintLabel(notificationText, notificationRect);
     }
+  }
+
+  function formatLevelText(levelIndex) {
+    return (
+      'Level ' +
+      (levelIndex + 1) +
+      '\n' +
+      Object.keys(recordTable[levelIndex + 3]).length +
+      ' / ' +
+      Object.keys(problemTable[levelIndex + 3]).length
+    );
   }
 
   function paintPiece(pieceKind, pieceRect) {
@@ -668,24 +724,13 @@ window.onload = function() {
     context.closePath();
   }
 
-  function paintLabel(text, rect) {
-    var lines = text.split('\n');
-    var h = rect.height / lines.length;
-    var y = rect.top + h / 2;
-    context.fillStyle = textColor;
-    for (var i = 0; i < lines.length; i++) {
-      context.fillText(lines[i], rect.centerX(), y + h * i);
-    }
-  }
-
   function paintButton(text, rect, cursor, color) {
     context.beginPath();
     context.rect(rect.left, rect.top, rect.width, rect.height);
     context.fillStyle = color || 'rgba(255, 255, 255, 0.2)';
     context.fill();
     context.stroke();
-    context.fillStyle = textColor;
-    context.fillText(text, rect.centerX(), rect.centerY());
+    paintLabel(text, rect);
     if (cursor) {
       context.strokeRect(
         rect.left + margin,
@@ -695,52 +740,14 @@ window.onload = function() {
       );
     }
   }
-};
 
-function ProblemList(stackCount) {
-  var kindCount = stackCount - 1;
-  this.kindMap = new Array(kindCount);
-  for (var i = 0; i < kindCount; i++) {
-    this.kindMap[i] = i;
-  }
-  this.boardCodes = Object.keys(problemTable[stackCount]);
-  shuffleArray(this.boardCodes);
-  this.problemIndex = -1;
-}
-
-ProblemList.prototype.toString = function() {
-  var n =
-    this.problemIndex >= 0
-      ? (this.problemIndex % this.boardCodes.length) + 1
-      : 0;
-  return n + ' / ' + this.boardCodes.length;
-};
-
-ProblemList.prototype.hasNext = function() {
-  return this.problemIndex < this.boardCodes.length - 1;
-};
-
-ProblemList.prototype.next = function(oldBoardCode) {
-  this.problemIndex++;
-  var stackCodes = this.boardCodes[
-    this.problemIndex % this.boardCodes.length
-  ].split('_');
-  var self = this;
-  for (;;) {
-    shuffleArray(this.kindMap);
-    shuffleArray(stackCodes);
-    var newBoardCode = stackCodes
-      .map(function(sc) {
-        return sc
-          .split('')
-          .map(function(c) {
-            return self.kindMap[parseInt(c)];
-          })
-          .join('');
-      })
-      .join('_');
-    if (newBoardCode !== oldBoardCode) {
-      return newBoardCode;
+  function paintLabel(text, rect) {
+    var lines = text.split('\n');
+    var h = rect.height / lines.length;
+    var y = rect.top + h / 2;
+    context.fillStyle = textColor;
+    for (var i = 0; i < lines.length; i++) {
+      context.fillText(lines[i], rect.centerX(), y + h * i);
     }
   }
 };

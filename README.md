@@ -1,6 +1,13 @@
 # Stacks
 
-Stacks is a simple puzzle game like the [Tower of Hanoi](https://en.wikipedia.org/wiki/Tower_of_Hanoi).
+Stacks is a simple puzzle game to rearrange the pieces of the same kind in a horizontal row.
+
+After rearranging, all the stacks will be in the same order of the pieces.
+
+The order of the pieces is not a fixed order, so it may be different depending on the problem.
+
+If it is arranged within the limit of moves, the problem is cleared.
+
 This game is playable in mobile and desktop browser.
 
 - Playable: https://stackshub.github.io/stacks/
@@ -11,7 +18,6 @@ This game is playable in mobile and desktop browser.
 - First, tap a stack to pop a piece.
 - Then, tap another stack to push the piece.
 - Alternatively, drag between stacks to move a piece.
-- Finally, arrange all the stacks in the same order within the limit of moves.
 
 ### Keyboard controls
 
