@@ -1,6 +1,6 @@
 # Stacks
 
-Stacks is a simple puzzle game to rearrange the pieces of the same kind in a horizontal row.
+Stacks is a simple puzzle game to rearrange the same kind of the pieces in a horizontal row.
 
 After rearranging, all the stacks will be in the same order of the pieces.
 
